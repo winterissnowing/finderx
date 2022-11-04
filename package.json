@@ -1,5 +1,5 @@
 {
-  "name": "@ahamoment/finderx",
+  "name": "finderx",
   "type": "module",
   "version": "0.0.1",
   "description": "precise query node by css selector ",
