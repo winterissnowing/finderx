@@ -1,4 +1,4 @@
-import { finderx } from "../../finderx.js";
+import { finder } from "../../finderx.js";
 
 export default function check(t, html, config = void 0) {
   document.write(html);
@@ -6,7 +6,7 @@ export default function check(t, html, config = void 0) {
   const list = [];
 
   for (let node of document.querySelectorAll("*")) {
-    const css = finderx(node, config);
+    const css = finder(node, config);
 
     t.is(
       document.querySelectorAll(css).length,

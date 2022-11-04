@@ -27,7 +27,7 @@ export type Options = {
 let config: Options;
 
 let rootDocument: Document | Element;
-export function finderx(input: Element, options?: Partial<Options>) {
+export function finder(input: Element, options?: Partial<Options>) {
   if (input.nodeType !== Node.ELEMENT_NODE) {
     throw new Error(`Can't generate CSS selector for non-element node type.`);
   }
