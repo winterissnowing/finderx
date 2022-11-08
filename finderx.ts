@@ -24,9 +24,87 @@ export type Options = {
   maxNumberOfTries: number;
 };
 
+//list order : mix,idname,className,tagName
+export type XNode = {
+  selectors: string[];
+  depth: number;
+  parentNode?: XNode | null;
+}
+
+export type XData = {
+  node: XNode,
+}
+
 let config: Options;
 
 let rootDocument: Document | Element;
+
+export function finderX(input: Element): XNode | null{
+  return findSelectorsTree(input, null)
+}
+
+function findSelectorsTree(input: Element, node: XNode | null): XNode | null{
+    const selectors = findSelectors(input)
+    if (!selectors) {
+      return node;
+    }
+
+    if (node == null) {
+      node = selectors;
+      if (input.parentElement) {
+        findSelectorsTree(input.parentElement, node)
+      }
+    } else {
+      node.parentNode = selectors;
+      if (input.parentElement) {
+        findSelectorsTree(input.parentElement, node.parentNode)
+      }
+    }
+    return node;
+}
+
+function findSelectors(input: Element){
+  let node : XNode = {
+    selectors : [],
+    depth: 1,
+  };
+  ["*", "idName", "className"].forEach((name)=>{
+    try {
+      const _name = name == "*" ? undefined : ops(name);
+      const selector = finder(input, _name);
+      if (selector) {
+        node.selectors.push(selector);
+      }
+    } catch (error) {
+      //console.error()
+    }
+  })
+  if (node.selectors.length == 0) {
+    return null;
+  }
+  //remove duplicate selector
+  node.selectors = [...new Set(node.selectors)]
+  return node;
+}
+
+function ops(name: string) {
+  const ops: Partial<Options> = {
+    idName: (name: string) => false,
+    className: (name: string) => false,
+    tagName: (name: string) => false,
+    attr: (name: string, value: string) => false,
+  }
+  if (name in ops) {
+    return {...ops, [name]: (name: string) => true};
+  }
+  return ops;
+}
+
+
+
+
+
+/**************************************fork from finder**************************************/
 export function finder(input: Element, options?: Partial<Options>) {
   if (input.nodeType !== Node.ELEMENT_NODE) {
     throw new Error(`Can't generate CSS selector for non-element node type.`);
