@@ -24,8 +24,8 @@ export type Options = {
   maxNumberOfTries: number;
 };
 
-//list order : mix,idname,className,tagName
 export type XNode = {
+  //selectors list order : mix,idname,className,tagName
   selectors: string[];
   depth: number;
   parentNode?: XNode | null;
@@ -70,7 +70,7 @@ function parseNodeSelectors(input: Element){
   };
   ["*", "idName", "className"].forEach((name)=>{
     try {
-      const _name = name == "*" ? undefined : ops(name);
+      const _name = name == "*" ? undefined : generateOptions(name);
       const selector = finder(input, _name);
       if (selector) {
         node.selectors.push(selector);
@@ -87,7 +87,7 @@ function parseNodeSelectors(input: Element){
   return node;
 }
 
-function ops(name: string) {
+function generateOptions(name: string) {
   const ops: Partial<Options> = {
     idName: (name: string) => false,
     className: (name: string) => false,
