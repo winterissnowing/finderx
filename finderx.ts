@@ -40,11 +40,11 @@ let config: Options;
 let rootDocument: Document | Element;
 
 export function finderX(input: Element): XNode | null{
-  return findSelectorsTree(input, null)
+  return parseSelectorsTree(input, null)
 }
 
-function findSelectorsTree(input: Element, node: XNode | null): XNode | null{
-    const selectors = findSelectors(input)
+function parseSelectorsTree(input: Element, node: XNode | null): XNode | null{
+    const selectors = parseNodeSelectors(input)
     if (!selectors) {
       return node;
     }
@@ -52,18 +52,18 @@ function findSelectorsTree(input: Element, node: XNode | null): XNode | null{
     if (node == null) {
       node = selectors;
       if (input.parentElement) {
-        findSelectorsTree(input.parentElement, node)
+        parseSelectorsTree(input.parentElement, node)
       }
     } else {
       node.parentNode = selectors;
       if (input.parentElement) {
-        findSelectorsTree(input.parentElement, node.parentNode)
+        parseSelectorsTree(input.parentElement, node.parentNode)
       }
     }
     return node;
 }
 
-function findSelectors(input: Element){
+function parseNodeSelectors(input: Element){
   let node : XNode = {
     selectors : [],
     depth: 1,
