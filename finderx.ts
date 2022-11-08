@@ -29,46 +29,86 @@ export type XNode = {
   selectors: string[];
   depth: number;
   parentNode?: XNode | null;
-}
+};
 
 export type XData = {
-  node: XNode,
-}
+  node: XNode;
+};
 
 let config: Options;
 
 let rootDocument: Document | Element;
 
-export function finderX(input: Element): XNode | null{
-  return parseSelectorsTree(input, null)
+export function parserX(input: Element): XNode | null {
+  return parseSelectorsTree(input, null);
 }
 
-function parseSelectorsTree(input: Element, node: XNode | null): XNode | null{
-    const selectors = parseNodeSelectors(input)
-    if (!selectors) {
-      return node;
-    }
+export function finderX(node: XNode, rootDocument: Element | Document) {
+  if (!node || node.selectors.length == 0) {
+    return null;
+  }
+  let el = findNode(node, rootDocument);
+  if (!el) {
+    return null;
+  }
 
-    if (node == null) {
-      node = selectors;
-      if (input.parentElement) {
-        parseSelectorsTree(input.parentElement, node)
-      }
-    } else {
-      node.parentNode = selectors;
-      if (input.parentElement) {
-        parseSelectorsTree(input.parentElement, node.parentNode)
-      }
+  let nodeParentNode = node.parentNode;
+  let elParentElement = el.parentElement;
+
+  while (nodeParentNode && elParentElement) {
+    if (elParentElement == rootDocument) {
+      break;
     }
+    const parentEl = findNode(nodeParentNode, rootDocument);
+    if (parentEl !== elParentElement) {
+      return null;
+    }
+    nodeParentNode = nodeParentNode.parentNode;
+    elParentElement = elParentElement.parentElement;
+  }
+  return el;
+}
+
+function findNode(node: XNode, rootDocument: Element | Document) {
+  let finalEl: Element | null = null;
+  for (const s of node.selectors) {
+    const el = rootDocument.querySelector(s);
+    if (el) {
+      if (finalEl && finalEl != el) {
+        return null;
+      }
+      finalEl = el;
+    }
+  }
+  return finalEl;
+}
+
+function parseSelectorsTree(input: Element, node: XNode | null): XNode | null {
+  const selectors = parseNodeSelectors(input);
+  if (!selectors) {
     return node;
+  }
+
+  if (node == null) {
+    node = selectors;
+    if (input.parentElement) {
+      parseSelectorsTree(input.parentElement, node);
+    }
+  } else {
+    node.parentNode = selectors;
+    if (input.parentElement) {
+      parseSelectorsTree(input.parentElement, node.parentNode);
+    }
+  }
+  return node;
 }
 
-function parseNodeSelectors(input: Element){
-  let node : XNode = {
-    selectors : [],
+function parseNodeSelectors(input: Element) {
+  let node: XNode = {
+    selectors: [],
     depth: 1,
   };
-  ["*", "idName", "className"].forEach((name)=>{
+  ["*", "idName", "className", "tagName"].forEach((name) => {
     try {
       const _name = name == "*" ? undefined : generateOptions(name);
       const selector = finder(input, _name);
@@ -78,12 +118,12 @@ function parseNodeSelectors(input: Element){
     } catch (error) {
       //console.error()
     }
-  })
+  });
   if (node.selectors.length == 0) {
     return null;
   }
   //remove duplicate selector
-  node.selectors = [...new Set(node.selectors)]
+  node.selectors = [...new Set(node.selectors)];
   return node;
 }
 
@@ -91,18 +131,14 @@ function generateOptions(name: string) {
   const ops: Partial<Options> = {
     idName: (name: string) => false,
     className: (name: string) => false,
-    tagName: (name: string) => false,
+    tagName: (name: string) => true,
     attr: (name: string, value: string) => false,
-  }
+  };
   if (name in ops) {
-    return {...ops, [name]: (name: string) => true};
+    return { ...ops, [name]: (name: string) => true };
   }
   return ops;
 }
-
-
-
-
 
 /**************************************fork from finder**************************************/
 export function finder(input: Element, options?: Partial<Options>) {
@@ -436,8 +472,7 @@ function same(path: Path, input: Element) {
 
 const regexAnySingleEscape = /[ -,\.\/:-@\[-\^`\{-~]/;
 const regexSingleEscape = /[ -,\.\/:-@\[\]\^`\{-~]/;
-const regexExcessiveSpaces =
-  /(^|\\+)?(\\[A-F0-9]{1,6})\x20(?![a-fA-F0-9\x20])/g;
+const regexExcessiveSpaces = /(^|\\+)?(\\[A-F0-9]{1,6})\x20(?![a-fA-F0-9\x20])/g;
 
 const defaultOptions = {
   escapeEverything: false,
