@@ -43,10 +43,11 @@ export function parserX(input: Element): XNode | null {
   return parseSelectorsTree(input, null);
 }
 
-export function finderX(node: XNode, rootDocument: Element | Document) {
+export function finderX(node: XNode, root: Element | Document) {
   if (!node || node.selectors.length == 0) {
     return null;
   }
+  let rootDocument = root || document.body
   let el = findNode(node, rootDocument);
   if (!el) {
     return null;
