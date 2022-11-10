@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "start": "tsc -w",
-    "test": "tsc && ava",
+    "test": "tsc && ava --verbose --timeout 3m",
     "prepare": "tsc",
     "release": "release-it --access public",
     "size": "minify finderx.js --sourceType module | gzip-size"
