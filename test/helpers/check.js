@@ -1,4 +1,4 @@
-import { finder } from "../../finderx.js";
+import { finder, finderX, parserX } from "../../finderx.js";
 
 export default function check(t, html, config = void 0) {
   document.write(html);
@@ -7,6 +7,8 @@ export default function check(t, html, config = void 0) {
 
   for (let node of document.querySelectorAll("*")) {
     const css = finder(node, config);
+    const xnode = parserX(node, document);
+    //console.log(xnode);
 
     t.is(
       document.querySelectorAll(css).length,
@@ -18,11 +20,24 @@ export default function check(t, html, config = void 0) {
       node,
       `Selector "${css}" selects another node.`
     );
+    for (let se of xnode.selectors) {
+      t.is(
+        document.querySelector(se),
+        node,
+        `Selector "${css}" failed excute parserX ! .`
+      );
+    }
+    t.is(
+      finderX(xnode),
+      node,
+      `Selector "${css}" failed excute finderX.`
+    );
 
     list.push(css);
   }
 
   t.snapshot(list.join("\n"));
+
 
   document.clear();
 }

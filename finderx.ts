@@ -47,7 +47,7 @@ export function finderX(node: XNode, root: Element | Document) {
   if (!node || node.selectors.length == 0) {
     return null;
   }
-  let rootDocument = root || document.body
+  let rootDocument = root || document
   let el = findNode(node, rootDocument);
   if (!el) {
     return null;
