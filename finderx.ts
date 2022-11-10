@@ -84,21 +84,23 @@ function findNode(node: XNode, rootDocument: Element | Document) {
   return finalEl;
 }
 
-function parseSelectorsTree(input: Element, node: XNode | null): XNode | null {
+function parseSelectorsTree(
+  input: Element, node: XNode | null, depth: number = 0): XNode | null {
   const xnode = parseNodeSelectors(input);
   if (!xnode) {
     return node;
   }
+  xnode.depth = depth
 
   if (node == null) {
     node = xnode;
     if (input.parentElement) {
-      parseSelectorsTree(input.parentElement, node);
+      parseSelectorsTree(input.parentElement, node, ++depth);
     }
   } else {
     node.parentNode = xnode;
     if (input.parentElement) {
-      parseSelectorsTree(input.parentElement, node.parentNode);
+      parseSelectorsTree(input.parentElement, node.parentNode, ++depth);
     }
   }
   return node;

@@ -8,7 +8,7 @@ export default function check(t, html, config = void 0) {
   for (let node of document.querySelectorAll("*")) {
     const css = finder(node, config);
     const xnode = parserX(node, document);
-    //console.log(xnode);
+    console.log(xnode);
 
     t.is(
       document.querySelectorAll(css).length,
