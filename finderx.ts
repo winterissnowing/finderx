@@ -85,18 +85,18 @@ function findNode(node: XNode, rootDocument: Element | Document) {
 }
 
 function parseSelectorsTree(input: Element, node: XNode | null): XNode | null {
-  const selectors = parseNodeSelectors(input);
-  if (!selectors) {
+  const xnode = parseNodeSelectors(input);
+  if (!xnode) {
     return node;
   }
 
   if (node == null) {
-    node = selectors;
+    node = xnode;
     if (input.parentElement) {
       parseSelectorsTree(input.parentElement, node);
     }
   } else {
-    node.parentNode = selectors;
+    node.parentNode = xnode;
     if (input.parentElement) {
       parseSelectorsTree(input.parentElement, node.parentNode);
     }
