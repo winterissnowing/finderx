@@ -143,7 +143,6 @@ function generateOptions(name: string) {
   return ops;
 }
 
-/**************************************fork from finder**************************************/
 export function finder(input: Element, options?: Partial<Options>) {
   if (input.nodeType !== Node.ELEMENT_NODE) {
     throw new Error(`Can't generate CSS selector for non-element node type.`);
