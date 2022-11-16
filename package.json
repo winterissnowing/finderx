@@ -1,7 +1,7 @@
 {
   "name": "finderx",
   "type": "module",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "precise query node by css selector ",
   "repository": "liuzhaodong/finderx",
   "homepage": "https://github.com/liuzhaodong/finderx",
