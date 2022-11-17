@@ -14,8 +14,8 @@ npm install finderx@latest
 
 ```js
 import {parserX, finderX} from 'finderx'
-const el = document.body;
-const xnode = parserX(node);
+const el = document.querySelector("body");
+const xnode = parserX(el);
 const xel = finderX(xnode);
 
 ```
