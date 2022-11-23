@@ -60,14 +60,24 @@ export function finderX(node: XNode, root: Element | Document) {
     if (elParentElement == rootDocument) {
       break;
     }
-    const parentEl = findNode(nodeParentNode, rootDocument);
-    if (parentEl !== elParentElement) {
+    if (!compareNode(nodeParentNode, elParentElement, rootDocument)) {
       return null;
     }
     nodeParentNode = nodeParentNode.parentNode;
     elParentElement = elParentElement.parentElement;
   }
   return el;
+}
+
+function compareNode(node: XNode, targetNode: Element | Document,
+   rootDocument: Element | Document){
+  for (const s of node.selectors) {
+    const el = rootDocument.querySelector(s);
+    if (el && el == targetNode) {
+      return true
+    }
+  }
+  return false;
 }
 
 function findNode(node: XNode, rootDocument: Element | Document) {
