@@ -43,7 +43,8 @@ export function parserX(input: Element): XNode | null {
   return parseSelectorsTree(input, null);
 }
 
-export function finderX(node: XNode, root: Element | Document) {
+export function finderX(node: XNode, root: Element | Document,
+   precision: String) {
   if (!node || node.selectors.length == 0) {
     return null;
   }
@@ -60,7 +61,15 @@ export function finderX(node: XNode, root: Element | Document) {
     if (elParentElement == rootDocument) {
       break;
     }
-    if (!compareNode(nodeParentNode, elParentElement, rootDocument)) {
+    if (precision && precision == "stricter") {
+      if (elParentElement == document.body ||
+        elParentElement == document.documentElement ||
+        elParentElement.parentElement == document.body) {
+        break;
+      }
+    }
+    const parentNode = findNode(nodeParentNode, rootDocument);
+    if (!parentNode || parentNode != elParentElement) {
       return null;
     }
     nodeParentNode = nodeParentNode.parentNode;
@@ -69,29 +78,14 @@ export function finderX(node: XNode, root: Element | Document) {
   return el;
 }
 
-function compareNode(node: XNode, targetNode: Element | Document,
-   rootDocument: Element | Document){
-  for (const s of node.selectors) {
-    const el = rootDocument.querySelector(s);
-    if (el && el == targetNode) {
-      return true
-    }
-  }
-  return false;
-}
-
 function findNode(node: XNode, rootDocument: Element | Document) {
-  let finalEl: Element | null = null;
   for (const s of node.selectors) {
     const el = rootDocument.querySelector(s);
     if (el) {
-      if (finalEl && finalEl != el) {
-        return null;
-      }
-      finalEl = el;
+      return el;
     }
   }
-  return finalEl;
+  return null;
 }
 
 function parseSelectorsTree(

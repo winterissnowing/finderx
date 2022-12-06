@@ -32,6 +32,11 @@ export default function check(t, html, config = void 0) {
       node,
       `Selector "${css}" failed excute finderX.`
     );
+    t.is(
+      finderX(xnode, document, "stricter"),
+      node,
+      `Selector "${css}" failed excute finderX.`
+    );
 
     list.push(css);
   }
