@@ -43,58 +43,113 @@ export function parserX(input: Element): XNode | null {
   return parseSelectorsTree(input, null);
 }
 
-export function finderX(node: XNode, root: Element | Document,
-   precision: String) {
+export function finderX(
+  node: XNode,
+  root: Element | Document,
+  precision: number
+) {
   if (!node || node.selectors.length == 0) {
     return null;
   }
-  let rootDocument = root || document
-  let el = findNode(node, rootDocument);
-  if (!el) {
+  const rootDocument = root || document;
+  const els = queryNodeListBySelectors(node.selectors, rootDocument);
+  if (!els || els.length == 0) {
     return null;
   }
 
-  let nodeParentNode = node.parentNode;
-  let elParentElement = el.parentElement;
-
-  while (nodeParentNode && elParentElement) {
-    if (elParentElement == rootDocument) {
-      break;
-    }
-    if (precision && precision == "stricter") {
-      if (elParentElement == document.body ||
-        elParentElement == document.documentElement ||
-        elParentElement.parentElement == document.body) {
-        break;
-      }
-    }
-    const parentNode = findNode(nodeParentNode, rootDocument);
-    if (!parentNode || parentNode != elParentElement) {
-      return null;
-    }
-    nodeParentNode = nodeParentNode.parentNode;
-    elParentElement = elParentElement.parentElement;
-  }
-  return el;
-}
-
-function findNode(node: XNode, rootDocument: Element | Document) {
-  for (const s of node.selectors) {
-    const el = rootDocument.querySelector(s);
-    if (el) {
+  for (const el of els) {
+    if (checkParentNode(node, el, rootDocument, precision)) {
       return el;
     }
   }
   return null;
 }
 
+function checkParentNode(
+  node: XNode,
+  el: Element,
+  rootDocument: Element | Document,
+  precision: number = 5
+) {
+  let nodeParentNode = node.parentNode;
+  let elParentElement = el.parentElement;
+  const maxDepth = getMaxDepth(node);
+  while (nodeParentNode && elParentElement) {
+    if (elParentElement == rootDocument) {
+      break;
+    }
+    if (precision >= 5) {
+      if (
+        elParentElement == document.body ||
+        elParentElement == document.documentElement ||
+        elParentElement.parentElement == document.body
+      ) {
+        break;
+      }
+    }
+    const parentNodes = queryNodeListBySelectors(
+      nodeParentNode.selectors,
+      rootDocument
+    );
+
+    if (
+      !parentNodes ||
+      parentNodes.length == 0 ||
+      parentNodes.some((pn) => pn == elParentElement) === false
+    ) {
+      const rate = ((nodeParentNode.depth - 1) / maxDepth) * 10;
+      if (rate >= precision) {
+        return true;
+      }
+      return false;
+    }
+    nodeParentNode = nodeParentNode.parentNode;
+    elParentElement = elParentElement.parentElement;
+  }
+  return true;
+}
+
+function getMaxDepth(node: XNode): number {
+  if (node.parentNode) {
+    return getMaxDepth(node.parentNode);
+  }
+  return node.depth;
+}
+
+function queryNodeListBySelectors(
+  selectors: string[],
+  rootDocument: Element | Document
+): Element[] {
+  const nodes: Element[] = [];
+  for (const s of selectors) {
+    const els = rootDocument.querySelectorAll(s);
+    if (els && els.length > 0) {
+      nodes.push(...Array.from(els));
+    }
+  }
+  return [...new Set(nodes)];
+}
+
+// function findNode(node: XNode, rootDocument: Element | Document) {
+//   for (const s of node.selectors) {
+//     const el = rootDocument.querySelector(s);
+//     if (el) {
+//       return el;
+//     }
+//   }
+//   return null;
+// }
+
 function parseSelectorsTree(
-  input: Element, node: XNode | null, depth: number = 0): XNode | null {
+  input: Element,
+  node: XNode | null,
+  depth: number = 0
+): XNode | null {
   const xnode = parseNodeSelectors(input);
   if (!xnode) {
     return node;
   }
-  xnode.depth = depth
+  xnode.depth = depth;
 
   if (node == null) {
     node = xnode;
@@ -478,7 +533,8 @@ function same(path: Path, input: Element) {
 
 const regexAnySingleEscape = /[ -,\.\/:-@\[-\^`\{-~]/;
 const regexSingleEscape = /[ -,\.\/:-@\[\]\^`\{-~]/;
-const regexExcessiveSpaces = /(^|\\+)?(\\[A-F0-9]{1,6})\x20(?![a-fA-F0-9\x20])/g;
+const regexExcessiveSpaces =
+  /(^|\\+)?(\\[A-F0-9]{1,6})\x20(?![a-fA-F0-9\x20])/g;
 
 const defaultOptions = {
   escapeEverything: false,
