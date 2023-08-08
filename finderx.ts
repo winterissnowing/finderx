@@ -230,22 +230,26 @@ export function parserX(input: Element): XNode | null {
 export function finderX(
   node: XNode,
   root: Element | Document,
-  precision: number
+  precision: number = 5
 ) {
   if (!node || node.selectors.length == 0) {
     return null;
   }
   const rootDocument = root || document;
   const els: Element[] = [];
-  const nodeList = queryNodeListBySelectors(node.selectors, rootDocument, false);
+  const nodeList = queryNodeListBySelectors(
+    node.selectors,
+    rootDocument,
+    false
+  );
   if (!nodeList || nodeList.length == 0) {
     return null;
   }
-  if ([...new Set(nodeList)].length != nodeList.length ) {
-    const el = findMostRecurringNode(nodeList)
-    els.push(el)
+  if ([...new Set(nodeList)].length != nodeList.length) {
+    const el = findMostRecurringNode(nodeList);
+    els.push(el);
   } else {
-    els.push(...nodeList)
+    els.push(...nodeList);
   }
 
   let maxFailedDepthRet: XResult | null = null;
@@ -255,10 +259,7 @@ export function finderX(
     if (ret.success) {
       return el;
     }
-    if (!maxFailedDepthRet) {
-      maxFailedDepthRet = ret;
-    }
-    if (ret.failedDepth > maxFailedDepthRet.failedDepth) {
+    if (!maxFailedDepthRet || ret.failedDepth > maxFailedDepthRet.failedDepth) {
       maxFailedDepthRet = ret;
       maxFailedDepthEl = el;
     }
