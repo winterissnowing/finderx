@@ -1,5 +1,7 @@
 import { finder, finderX, parserX } from "../../finderx.js";
 
+import 'css.escape'
+
 export default function check(t, html, config = void 0) {
   document.write(html);
 
