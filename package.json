@@ -3,8 +3,8 @@
   "type": "module",
   "version": "1.1.0",
   "description": "precise query node by css selector ",
-  "repository": "liuzhaodong/finderx",
-  "homepage": "https://github.com/liuzhaodong/finderx",
+  "repository": "winterissnowing/finderx",
+  "homepage": "https://github.com/winterissnowing/finderx",
   "author": "liuzhaodong <liuzhaodong@gmail.com>",
   "license": "MIT",
   "keywords": [

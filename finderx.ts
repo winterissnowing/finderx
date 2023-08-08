@@ -92,7 +92,8 @@ function getMaxDepth(node: XNode): number {
 
 function queryNodeListBySelectors(
   selectors: string[],
-  rootDocument: Element | Document
+  rootDocument: Element | Document,
+  removeRepeat: boolean = true
 ): Element[] {
   const nodes: Element[] = [];
   for (const s of selectors) {
@@ -101,7 +102,25 @@ function queryNodeListBySelectors(
       nodes.push(...Array.from(els));
     }
   }
-  return [...new Set(nodes)];
+  return removeRepeat ? [...new Set(nodes)] : nodes;
+}
+
+function findMostRecurringNode(nodes: Element[]): Element {
+  const m = new Map();
+  let finalNode: Element = nodes[0];
+  let count = 0;
+  nodes.forEach((node) => {
+    const i = m.get(node) ? m.get(node) + 1 : 1;
+    m.set(node, i);
+  });
+
+  m.forEach((value, key) => {
+    if (value > count) {
+      count = value;
+      finalNode = key;
+    }
+  });
+  return finalNode;
 }
 
 function compareParentNode(
@@ -217,32 +236,19 @@ export function finderX(
     return null;
   }
   const rootDocument = root || document;
-  const els = queryNodeListBySelectors(node.selectors, rootDocument);
+  const els = queryNodeListBySelectors(node.selectors, rootDocument, false);
   if (!els || els.length == 0) {
     return null;
   }
-
-  let maxFailedDepthRet: XResult | null = null;
-  let maxFailedDepthEl: Element | null = null;
-  for (const el of els) {
-    const ret = compareParentNode(node, el, rootDocument);
-    if (ret.success) {
-      return el;
-    }
-    if (!maxFailedDepthRet) {
-      maxFailedDepthRet = ret;
-    }
-    if (ret.failedDepth > maxFailedDepthRet.failedDepth) {
-      maxFailedDepthRet = ret;
-      maxFailedDepthEl = el;
-    }
+  const el = findMostRecurringNode(els);
+  const ret = compareParentNode(node, el, rootDocument);
+  if (ret.success) {
+    return el;
   }
-  if (maxFailedDepthRet && maxFailedDepthEl) {
-    const { failedDepth, maxDepth } = maxFailedDepthRet;
-    const rate = ((failedDepth - 1) / maxDepth) * 10;
-    if (rate >= precision) {
-      return maxFailedDepthEl;
-    }
+  const { failedDepth, maxDepth } = ret;
+  const rate = ((failedDepth - 1) / maxDepth) * 10;
+  if (rate >= precision) {
+    return el;
   }
   return null;
 }
