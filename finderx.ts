@@ -241,8 +241,8 @@ export function finderX(
   if (!nodeList || nodeList.length == 0) {
     return null;
   }
-  if ([...new Set(els)].length != els.length ) {
-    const el = findMostRecurringNode(els)
+  if ([...new Set(nodeList)].length != nodeList.length ) {
+    const el = findMostRecurringNode(nodeList)
     els.push(el)
   } else {
     els.push(...nodeList)
