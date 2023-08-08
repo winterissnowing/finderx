@@ -236,19 +236,39 @@ export function finderX(
     return null;
   }
   const rootDocument = root || document;
-  const els = queryNodeListBySelectors(node.selectors, rootDocument, false);
-  if (!els || els.length == 0) {
+  const els: Element[] = [];
+  const nodeList = queryNodeListBySelectors(node.selectors, rootDocument, false);
+  if (!nodeList || nodeList.length == 0) {
     return null;
   }
-  const el = findMostRecurringNode(els);
-  const ret = compareParentNode(node, el, rootDocument);
-  if (ret.success) {
-    return el;
+  if ([...new Set(els)].length != els.length ) {
+    const el = findMostRecurringNode(els)
+    els.push(el)
+  } else {
+    els.push(...nodeList)
   }
-  const { failedDepth, maxDepth } = ret;
-  const rate = ((failedDepth - 1) / maxDepth) * 10;
-  if (rate >= precision) {
-    return el;
+
+  let maxFailedDepthRet: XResult | null = null;
+  let maxFailedDepthEl: Element | null = null;
+  for (const el of els) {
+    const ret = compareParentNode(node, el, rootDocument);
+    if (ret.success) {
+      return el;
+    }
+    if (!maxFailedDepthRet) {
+      maxFailedDepthRet = ret;
+    }
+    if (ret.failedDepth > maxFailedDepthRet.failedDepth) {
+      maxFailedDepthRet = ret;
+      maxFailedDepthEl = el;
+    }
+  }
+  if (maxFailedDepthRet && maxFailedDepthEl) {
+    const { failedDepth, maxDepth } = maxFailedDepthRet;
+    const rate = ((failedDepth - 1) / maxDepth) * 10;
+    if (rate >= precision) {
+      return maxFailedDepthEl;
+    }
   }
   return null;
 }
