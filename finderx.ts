@@ -304,11 +304,11 @@ function finderMostPrecisionElement(
       failedData = { el, failedDepth, maxDepth };
     }
   }
-  if (successEls.length > 0) {
-    if (successEls.length == 1) {
-      return successEls[0];
-    }
-    //double check el siblings element
+  if (successEls.length == 1) {
+    return successEls[0];
+  }
+  if (successEls.length > 1) {
+    //need double check el siblings element
     let tempEl: Element = successEls[0];
     let tempFailedDepth = 0;
     for (const el of successEls) {
