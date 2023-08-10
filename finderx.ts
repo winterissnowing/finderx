@@ -15,6 +15,8 @@ export type Options = {
 export type XNode = {
   //selectors list order : mix,idname,className,tagName
   selectors: string[];
+  nextElementSelectors: string[];
+  previousElementSelectors: string[];
   depth: number;
   parentNode?: XNode | null;
 };
@@ -56,32 +58,44 @@ const finderConfigs = [
   {
     ...defaultConfig,
     tagName: (name: string) => true,
+  },
+  {
+    ...defaultConfig,
+    idName: (name: string) => true,
+  },
+  {
+    ...defaultConfig,
+    tagName: (name: string) => true,
+    attr: (name: string) => finderAttrs.includes(name),
+  },
+  {
+    ...defaultConfig,
     className: (name: string) => true,
     attr: (name: string) => finderAttrs.includes(name),
   },
   {
     ...defaultConfig,
     tagName: (name: string) => true,
+    idName: (name: string) => true,
     className: (name: string) => true,
+    attr: (name: string) => false,
   },
   {
     ...defaultConfig,
     tagName: (name: string) => true,
-  },
-  {
-    ...defaultConfig,
-    tagName: (name: string) => true,
+    idName: (name: string) => true,
+    className: (name: string) => true,
     attr: (name: string) => finderAttrs.includes(name),
   },
 ];
 
-finderAttrs.forEach((attr) => {
-  finderConfigs.push({
-    ...defaultConfig,
-    tagName: (name: string) => true,
-    attr: (name: string, value) => name == attr,
-  });
-});
+// finderAttrs.forEach((attr) => {
+//   finderConfigs.push({
+//     ...defaultConfig,
+//     tagName: (name: string) => true,
+//     attr: (name: string, value) => name == attr,
+//   });
+// });
 
 function getMaxDepth(node: XNode): number {
   if (node.parentNode) {
@@ -96,6 +110,9 @@ function queryNodeListBySelectors(
   removeRepeat: boolean = true
 ): Element[] {
   const nodes: Element[] = [];
+  if (!selectors) {
+    return nodes;
+  }
   for (const s of selectors) {
     const els = rootDocument.querySelectorAll(s);
     if (els && els.length > 0) {
@@ -126,7 +143,8 @@ function findMostRecurringNode(nodes: Element[]): Element {
 function compareParentNode(
   node: XNode,
   el: Element,
-  rootDocument: Element | Document
+  rootDocument: Element | Document,
+  isCompareSibings: boolean = false
 ): XResult {
   let nodeParentNode = node.parentNode;
   let elParentElement = el.parentElement;
@@ -151,11 +169,15 @@ function compareParentNode(
       nodeParentNode.selectors,
       rootDocument
     );
+    const isMatchSibings = isCompareSibings
+      ? compareSibingsNode(nodeParentNode, elParentElement, rootDocument)
+      : true;
 
     if (
       !parentNodes ||
       parentNodes.length == 0 ||
-      !parentNodes.includes(elParentElement)
+      !parentNodes.includes(elParentElement) ||
+      !isMatchSibings
     ) {
       xresult.failedDepth = nodeParentNode.depth;
       xresult.success = false;
@@ -164,6 +186,33 @@ function compareParentNode(
     elParentElement = elParentElement.parentElement;
   }
   return xresult;
+}
+
+function compareSibingsNode(
+  node: XNode,
+  el: Element,
+  rootDocument: Element | Document
+) {
+  let isMatchNext = true;
+  let isMatchPrevious = true;
+  const { previousElementSelectors, nextElementSelectors } = node;
+  if (nextElementSelectors && nextElementSelectors.length > 0) {
+    const nextElementSiblings = queryNodeListBySelectors(
+      nextElementSelectors,
+      rootDocument
+    );
+    isMatchNext = (el.nextElementSibling &&
+      nextElementSiblings.includes(el.nextElementSibling)) as boolean;
+  }
+  if (previousElementSelectors && previousElementSelectors.length > 0) {
+    const previousElementSiblings = queryNodeListBySelectors(
+      previousElementSelectors,
+      rootDocument
+    );
+    isMatchPrevious = (el.previousElementSibling &&
+      previousElementSiblings.includes(el.previousElementSibling)) as boolean;
+  }
+  return isMatchNext && isMatchPrevious;
 }
 
 function queryElementSelectors(input: Element) {
@@ -202,9 +251,21 @@ function parseSelectorsTree(
     return node;
   }
   const xnode: XNode = {
+    previousElementSelectors: [],
+    nextElementSelectors: [],
     selectors,
     depth,
   };
+  if (input.previousElementSibling) {
+    xnode.previousElementSelectors = queryElementSelectors(
+      input.previousElementSibling
+    );
+  }
+  if (input.nextElementSibling) {
+    xnode.nextElementSelectors = queryElementSelectors(
+      input.nextElementSibling
+    );
+  }
   if (node == null) {
     node = xnode;
     if (input.parentElement) {
@@ -217,6 +278,63 @@ function parseSelectorsTree(
     }
   }
   return node;
+}
+
+function finderMostPrecisionElement(
+  elements: Element[],
+  node: XNode,
+  rootDocument: Element | Document,
+  precision: number
+): Element | null {
+  const successEls = [];
+  let failedData = {
+    el: null as Element | null,
+    failedDepth: 0 as number,
+    maxDepth: 0 as number,
+  };
+  for (const el of elements) {
+    const { success, failedDepth, maxDepth } = compareParentNode(
+      node,
+      el,
+      rootDocument
+    );
+    if (success) {
+      successEls.push(el);
+    } else if (!failedData.el || failedDepth > failedData.failedDepth) {
+      failedData = { el, failedDepth, maxDepth };
+    }
+  }
+  if (successEls.length > 0) {
+    if (successEls.length == 1) {
+      return successEls[0];
+    }
+    //double check el siblings element
+    let tempEl: Element = successEls[0];
+    let tempFailedDepth = 0;
+    for (const el of successEls) {
+      const { success, failedDepth } = compareParentNode(
+        node,
+        el,
+        rootDocument,
+        true
+      );
+      if (success) {
+        return el;
+      } else if (failedDepth > tempFailedDepth) {
+        tempFailedDepth = failedDepth;
+        tempEl = el;
+      }
+    }
+    return tempEl;
+  }
+  if (failedData.el) {
+    const { failedDepth, maxDepth, el } = failedData;
+    const rate = ((failedDepth - 1) / maxDepth) * 10;
+    if (rate >= precision) {
+      return el;
+    }
+  }
+  return null;
 }
 
 export function finder(input: Element, options?: Partial<Options>) {
@@ -236,7 +354,7 @@ export function finderX(
     return null;
   }
   const rootDocument = root || document;
-  const els: Element[] = [];
+  const elements: Element[] = [];
   const nodeList = queryNodeListBySelectors(
     node.selectors,
     rootDocument,
@@ -247,29 +365,10 @@ export function finderX(
   }
   if ([...new Set(nodeList)].length != nodeList.length) {
     const el = findMostRecurringNode(nodeList);
-    els.push(el);
+    elements.push(el);
   } else {
-    els.push(...nodeList);
+    elements.push(...nodeList);
   }
 
-  let maxFailedDepthRet: XResult | null = null;
-  let maxFailedDepthEl: Element | null = null;
-  for (const el of els) {
-    const ret = compareParentNode(node, el, rootDocument);
-    if (ret.success) {
-      return el;
-    }
-    if (!maxFailedDepthRet || ret.failedDepth > maxFailedDepthRet.failedDepth) {
-      maxFailedDepthRet = ret;
-      maxFailedDepthEl = el;
-    }
-  }
-  if (maxFailedDepthRet && maxFailedDepthEl) {
-    const { failedDepth, maxDepth } = maxFailedDepthRet;
-    const rate = ((failedDepth - 1) / maxDepth) * 10;
-    if (rate >= precision) {
-      return maxFailedDepthEl;
-    }
-  }
-  return null;
+  return finderMostPrecisionElement(elements, node, rootDocument, precision);
 }
