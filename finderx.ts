@@ -348,7 +348,7 @@ export function parserX(input: Element): XNode | null {
 export function finderX(
   node: XNode,
   root: Element | Document,
-  precision: number = 5
+  precision: number = 10
 ) {
   if (!node || node.selectors.length == 0) {
     return null;
